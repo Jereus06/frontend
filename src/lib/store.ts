@@ -13,6 +13,7 @@ type Store = {
   receiveStock: (productId: string, qty: number) => void;
   updateProduct: (id: string, patch: Partial<Product>) => void;
   addProduct: (product: Omit<Product, "id" | "sku"> & { sku?: string }) => void;
+  importProducts: (rows: Product[]) => void;
   updateSettings: (patch: Partial<Settings>) => void;
   importSales: (rows: Sale[]) => void;
   resetDemo: () => void;
@@ -69,6 +70,19 @@ export const useAppStore = create<Store>()(
               safetyStock: product.safetyStock,
               unitCost: product.unitCost,
             },
+          ],
+        });
+      },
+      importProducts: (rows) => {
+        if (!rows.length) return;
+        const importedBySku = new Map(rows.map((product) => [product.sku.toLowerCase(), product]));
+        const existingSkus = new Set(get().products.map((product) => product.sku.toLowerCase()));
+        set({
+          products: [
+            ...get().products.map(
+              (product) => importedBySku.get(product.sku.toLowerCase()) ?? product,
+            ),
+            ...rows.filter((product) => !existingSkus.has(product.sku.toLowerCase())),
           ],
         });
       },
